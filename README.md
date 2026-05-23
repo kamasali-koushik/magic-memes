@@ -6,7 +6,7 @@ Turn one photo into six memes. Pick one, tweak it, share it, watch reactions rol
 
 | Stickers format                                      | Classic Impact format                               |
 | ---------------------------------------------------- | --------------------------------------------------- |
-| ![Stickers meme](./output/magic-meme-e061a4ab60.png) | ![Classic meme](./output/magic-meme-7684f9d292.png) |
+| ![Stickers meme](./outputs/magic-meme-e061a4ab60.png) | ![Classic meme](./outputs/magic-meme-7684f9d292.png) |
 
 ## What it does
 
