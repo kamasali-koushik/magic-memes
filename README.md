@@ -8,9 +8,9 @@ Turn one photo into six memes. Pick one, tweak it, share it, watch reactions rol
 | ----------------------------------------------------- | ---------------------------------------------------- |
 | ![Stickers meme](./outputs/magic-meme-e061a4ab60.png) | ![Classic meme](./outputs/magic-meme-7684f9d292.png) |
 
-| BG Swap — subject teleported to a new scene         | Classic Impact — burger expectations vs reality      |
-| --------------------------------------------------- | ---------------------------------------------------- |
-| ![BG Swap meme](./outputs/magic-meme-51304b8655.png) | ![Classic meme](./outputs/magic-meme-3259f44148.png) |
+| BG Swap — subject teleported to a new scene           | Classic Impact — burger expectations vs reality       |
+| ----------------------------------------------------- | ----------------------------------------------------- |
+| ![BG Swap meme](./outputss/magic-meme-51304b8655.png) | ![Classic meme](./outputss/magic-meme-3259f44148.png) |
 
 ## What it does
 
