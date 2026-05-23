@@ -201,3 +201,13 @@
   animation: reaction-float 2.4s ease-out forwards;
   will-change: transform, opacity;
 }
+
+@keyframes panther-runner {
+  0% { left: 0%; }
+  100% { left: 100%; }
+}
+
+@keyframes progress-fill {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}

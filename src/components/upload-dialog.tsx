@@ -11,6 +11,7 @@ import {
 
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -24,6 +25,8 @@ import { uploadMeme, type ShareResult } from "@/api/share-api";
 import { MemePreview } from "@/components/meme-preview";
 import { MemeCanvasEditor } from "@/components/meme-canvas-editor";
 import { SharedView } from "@/components/shared-view";
+import loadingIcon from "@/assets/images/image-upload-dialog/loading-icon.png";
+import disappointedClose from "@/assets/images/image-upload-dialog/on-hover-close-button.jpg";
 
 const FORMAT_LABELS: Record<MemeIdea["format"], string> = {
   classic: "Classic",
@@ -134,7 +137,9 @@ export function UploadDialog() {
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
         className={cn("transition-[max-width] duration-200", wideClass)}
+        showCloseButton={false}
       >
+        <DisappointedCloseButton />
         <DialogHeader>
           <DialogTitle>
             {showsShared
@@ -272,14 +277,42 @@ export function UploadDialog() {
 
 function BusyState() {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-input/30 px-6 py-12 text-muted-foreground">
-      <HugeiconsIcon
-        icon={Loading03Icon}
-        className="size-8 animate-spin text-primary"
-      />
+    <div className="flex flex-col items-center justify-center gap-6 rounded-2xl border-2 border-dashed border-border bg-input/30 px-6 py-12 text-muted-foreground">
       <p className="text-sm font-medium text-foreground">
         Looking at your photo…
       </p>
+      <div className="relative w-full max-w-sm pt-14">
+        <img
+          src={loadingIcon}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute top-0 size-14 -translate-x-1/2 animate-[panther-runner_2.4s_linear_infinite]"
+        />
+        <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+          <div className="h-full rounded-full bg-primary animate-[progress-fill_2.4s_linear_infinite]" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DisappointedCloseButton() {
+  return (
+    <div className="group absolute top-4 right-4 z-10">
+      <DialogClose asChild>
+        <Button variant="ghost" size="icon-sm">
+          <HugeiconsIcon icon={Cancel01Icon} strokeWidth={2} />
+          <span className="sr-only">Close</span>
+        </Button>
+      </DialogClose>
+      <div className="pointer-events-none absolute top-full right-0 mt-2 w-24 origin-top-right scale-95 opacity-0 transition-[opacity,transform] duration-150 group-hover:scale-100 group-hover:opacity-100">
+        <img
+          src={disappointedClose}
+          alt=""
+          aria-hidden
+          className="rounded-xl ring-1 ring-border shadow-xl"
+        />
+      </div>
     </div>
   );
 }

@@ -6,6 +6,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 import { fetchMeme, REACTIONS } from "@/api/share-api";
+import { MemeImageActions } from "@/components/meme-image-actions";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -159,6 +160,8 @@ export function SharedView({ id, imageUrl, shareUrl }: Props) {
             Anyone with this link can react. No signup needed.
           </p>
         </div>
+
+        <MemeImageActions id={id} imageUrl={imageUrl} />
 
         <div>
           <div className="mb-2 flex items-baseline justify-between">

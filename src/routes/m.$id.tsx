@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
 import { fetchMeme, type Meme } from "@/api/share-api";
+import { MemeImageActions } from "@/components/meme-image-actions";
 import { ReactionBar } from "@/components/reaction-bar";
 import { Button } from "@/components/ui/button";
 
@@ -42,6 +43,13 @@ function MemeViewerRoute() {
             src={meme.imageUrl}
             alt="Shared meme"
             className="w-full rounded-2xl ring-1 ring-border shadow-sm"
+          />
+          <MemeImageActions
+            id={meme.id}
+            imageUrl={meme.imageUrl}
+            label=""
+            helper=""
+            className="w-full"
           />
           <ReactionBar id={meme.id} />
         </>
