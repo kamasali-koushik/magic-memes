@@ -4,9 +4,13 @@ Turn one photo into six memes. Pick one, tweak it, share it, watch reactions rol
 
 ## Example output
 
-| Stickers format                                      | Classic Impact format                               |
-| ---------------------------------------------------- | --------------------------------------------------- |
-| ![Stickers meme](./output/magic-meme-e061a4ab60.png) | ![Classic meme](./output/magic-meme-7684f9d292.png) |
+| Stickers — emoji match photo + joke                   | Classic Impact — setup/punchline                     |
+| ----------------------------------------------------- | ---------------------------------------------------- |
+| ![Stickers meme](./outputs/magic-meme-e061a4ab60.png) | ![Classic meme](./outputs/magic-meme-7684f9d292.png) |
+
+| BG Swap — subject teleported to a new scene         | Classic Impact — burger expectations vs reality      |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| ![BG Swap meme](./outputs/magic-meme-51304b8655.png) | ![Classic meme](./outputs/magic-meme-3259f44148.png) |
 
 ## What it does
 
