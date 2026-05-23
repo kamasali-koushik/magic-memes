@@ -29,15 +29,23 @@ function LeaderboardRoute() {
 
   useEffect(() => {
     let cancelled = false;
-    fetchLeaderboard(50)
-      .then((data) => {
-        if (!cancelled) setEntries(data);
-      })
-      .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : String(e));
-      });
+    const load = () => {
+      fetchLeaderboard(50)
+        .then((data) => {
+          if (cancelled) return;
+          setEntries(data);
+          setError(null);
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          setError(e instanceof Error ? e.message : String(e));
+        });
+    };
+    load();
+    const id = setInterval(load, 5000);
     return () => {
       cancelled = true;
+      clearInterval(id);
     };
   }, []);
 

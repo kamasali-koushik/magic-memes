@@ -1,73 +1,65 @@
-# React + TypeScript + Vite
+# Magic Memes
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Turn one photo into six memes. Pick one, tweak it, share it, watch reactions roll in live.
 
-Currently, two official plugins are available:
+## Example output
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+| Stickers format                                      | Classic Impact format                               |
+| ---------------------------------------------------- | --------------------------------------------------- |
+| ![Stickers meme](./output/magic-meme-e061a4ab60.png) | ![Classic meme](./output/magic-meme-7684f9d292.png) |
 
-## React Compiler
+## What it does
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Upload a photo.** Drag-drop, webcam, or paste from clipboard.
+2. **Vision LLM reads the photo** and writes six meme captions — one per format — anchored on what's actually in the picture (expression, outfit, objects, setting).
+3. **Pick a format** from six live previews:
+   - **Lucky** — chaotic remix via image generation
+   - **Classic** — Impact-font top/bottom text
+   - **Deepfried** — over-saturated, unhinged energy
+   - **BG Swap** — same subject, absurd new backdrop
+   - **Stickers** — caption + emoji that match the photo and the joke
+   - **Remix** — portable caption to slap on another meme
+4. **Edit on canvas.** Drag text, resize, recolor, change font size — all per-text. Switch formats without losing edits.
+5. **Share via link.** Flattened PNG goes to Vercel Blob. Share URL renders the meme at `/m/<id>`.
+6. **Live reactions.** Viewers tap one of six emoji (laugh / fire / mind / cry / skull / heart). The creator's share page polls and floats emoji animations across the meme for each new reaction.
 
-## Expanding the ESLint configuration
+## Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **React 19 + Vite** with TanStack Router
+- **TypeScript** end-to-end
+- **Tailwind v4 + shadcn/ui + Radix**
+- **Konva** for the canvas editor
+- **OpenRouter** for the vision LLM (Claude) and image generation (Gemini)
+- **Vercel Blob** for image storage and append-only reaction events
+- Deployed on **Vercel** with serverless API routes under `/api`
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Local setup
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+cp .env.example .env.local   # then fill in the keys below
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Required env vars:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `VITE_OPEN_ROUTER_API_KEY` — vision + image-gen calls
+- `BLOB_READ_WRITE_TOKEN` — Vercel Blob storage (used by `/api/*` routes)
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Project layout
+
 ```
+src/
+  api/             OpenRouter + share + storage clients
+  components/      meme-canvas-editor, meme-preview, shared-view, upload-dialog…
+  routes/          TanStack Router file routes (/, /upload, /leaderboard, /m/$id)
+api/               Vercel serverless functions (upload, react, meme, memes)
+public/            static assets
+```
+
+## Scripts
+
+- `npm run dev` — local Vite dev server with `/api/*` mounted
+- `npm run build` — type-check then production build
+- `npm run lint` — ESLint
+- `npm run preview` — preview the production build locally

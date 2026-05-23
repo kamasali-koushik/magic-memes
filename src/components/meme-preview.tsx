@@ -35,8 +35,7 @@ export function MemePreview({
 
 const IMPACT_FONT =
   '"Impact", "Haettenschweiler", "Arial Narrow Bold", sans-serif';
-const SERIF_FONT = '"Times New Roman", Times, serif';
-const TABLOID_FONT = '"Arial Black", "Helvetica", sans-serif';
+const SANS_FONT = '"Helvetica", "Arial", sans-serif';
 
 function font(override: string | null | undefined, fallback: string): string {
   return override && override.length > 0 ? override : fallback;
@@ -55,54 +54,22 @@ function renderMeme(
   overrides: MemeOverrides,
 ) {
   switch (idea.format) {
+    case "lucky":
+      return <Lucky imageUrl={imageUrl} idea={idea} {...overrides} />;
     case "classic":
       return <Classic imageUrl={imageUrl} idea={idea} {...overrides} />;
-    case "caption":
-      return <Caption imageUrl={imageUrl} idea={idea} {...overrides} />;
-    case "speech":
-      return <Speech imageUrl={imageUrl} idea={idea} {...overrides} />;
-    case "motivational":
-      return <Motivational imageUrl={imageUrl} idea={idea} {...overrides} />;
-    case "movie":
-      return <Movie imageUrl={imageUrl} idea={idea} {...overrides} />;
-    case "tabloid":
-      return <Tabloid imageUrl={imageUrl} idea={idea} {...overrides} />;
+    case "deepfried":
+      return <DeepFried imageUrl={imageUrl} idea={idea} {...overrides} />;
+    case "bgswap":
+      return <BgSwap imageUrl={imageUrl} idea={idea} {...overrides} />;
+    case "stickers":
+      return <Stickers imageUrl={imageUrl} idea={idea} {...overrides} />;
+    case "remix":
+      return <Remix imageUrl={imageUrl} idea={idea} {...overrides} />;
   }
 }
 
-function Classic({
-  imageUrl,
-  idea,
-  fontFamily,
-  offset,
-}: MemeOverrides & {
-  imageUrl: string;
-  idea: Extract<MemeIdea, { format: "classic" }>;
-}) {
-  const family = font(fontFamily, IMPACT_FONT);
-  const shift = translate(offset);
-  return (
-    <>
-      <img
-        src={imageUrl}
-        alt=""
-        className="absolute inset-0 size-full object-cover"
-      />
-      <ImpactText
-        family={family}
-        style={{ top: "3cqw", fontSize: "10cqw", ...shift }}
-      >
-        {idea.topText}
-      </ImpactText>
-      <ImpactText
-        family={family}
-        style={{ bottom: "3cqw", fontSize: "10cqw", ...shift }}
-      >
-        {idea.bottomText}
-      </ImpactText>
-    </>
-  );
-}
+// --- Shared helpers ---
 
 function ImpactText({
   children,
@@ -128,224 +95,316 @@ function ImpactText({
   );
 }
 
-function Caption({
+// --- Variants ---
+
+function Classic({
   imageUrl,
   idea,
   fontFamily,
   offset,
 }: MemeOverrides & {
   imageUrl: string;
-  idea: Extract<MemeIdea, { format: "caption" }>;
+  idea: Extract<MemeIdea, { format: "classic" }>;
+}) {
+  const family = font(fontFamily, IMPACT_FONT);
+  const shift = translate(offset);
+  return (
+    <>
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+      />
+      <ImpactText
+        family={family}
+        style={{ top: "3cqw", fontSize: "10cqw", ...shift }}
+      >
+        {idea.topText}
+      </ImpactText>
+      <ImpactText
+        family={family}
+        style={{ bottom: "3cqw", fontSize: "10cqw", ...shift }}
+      >
+        {idea.bottomText}
+      </ImpactText>
+    </>
+  );
+}
+
+function DeepFried({
+  imageUrl,
+  idea,
+  fontFamily,
+  offset,
+}: MemeOverrides & {
+  imageUrl: string;
+  idea: Extract<MemeIdea, { format: "deepfried" }>;
+}) {
+  const family = font(fontFamily, IMPACT_FONT);
+  const shift = translate(offset);
+  return (
+    <>
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+        style={{
+          filter: "saturate(2.4) contrast(1.4) hue-rotate(-8deg) brightness(1.05)",
+        }}
+      />
+      <div
+        className="pointer-events-none absolute inset-0 mix-blend-overlay"
+        style={{
+          background:
+            "radial-gradient(circle at 30% 25%, rgba(255,80,0,0.45), transparent 55%), radial-gradient(circle at 75% 80%, rgba(255,255,0,0.35), transparent 55%)",
+        }}
+      />
+      <ImpactText
+        family={family}
+        style={{
+          top: "3cqw",
+          fontSize: "11cqw",
+          color: "#FFEA00",
+          WebkitTextStroke: "0.6cqw #B30000",
+          textShadow:
+            "0 0.4cqw 0 #B30000, 0 0 1cqw rgba(255,0,0,0.8), 0 0 2cqw rgba(255,255,0,0.6)",
+          ...shift,
+        }}
+      >
+        {idea.topText}
+      </ImpactText>
+      <ImpactText
+        family={family}
+        style={{
+          bottom: "3cqw",
+          fontSize: "11cqw",
+          color: "#FFEA00",
+          WebkitTextStroke: "0.6cqw #B30000",
+          textShadow:
+            "0 0.4cqw 0 #B30000, 0 0 1cqw rgba(255,0,0,0.8), 0 0 2cqw rgba(255,255,0,0.6)",
+          ...shift,
+        }}
+      >
+        {idea.bottomText}
+      </ImpactText>
+    </>
+  );
+}
+
+function Lucky({
+  imageUrl,
+  idea,
+  fontFamily,
+  offset,
+}: MemeOverrides & {
+  imageUrl: string;
+  idea: Extract<MemeIdea, { format: "lucky" }>;
 }) {
   return (
-    <div className="flex h-full w-full flex-col bg-white">
+    <>
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+        style={{ filter: "saturate(1.3) contrast(1.1)" }}
+      />
       <div
-        className="flex items-center justify-center px-[4cqw] py-[3cqw] text-center font-semibold text-black"
+        className="absolute inset-x-[5cqw] bottom-[5cqw] rounded-[2.5cqw] px-[3.5cqw] py-[2.5cqw] text-center ring-2 ring-black/40"
         style={{
-          fontFamily: font(fontFamily, "inherit"),
-          fontSize: "5.5cqw",
+          background: "linear-gradient(135deg, #fef08a 0%, #fda4af 100%)",
+          fontFamily: font(fontFamily, SANS_FONT),
+          fontWeight: 800,
+          fontSize: "5cqw",
+          lineHeight: 1.15,
+          color: "#1f2937",
+          boxShadow: "0 1cqw 2cqw rgba(0,0,0,0.45)",
+          ...translate(offset),
+        }}
+      >
+        <span
+          className="block uppercase tracking-[0.25em]"
+          style={{ fontSize: "2.6cqw", opacity: 0.7 }}
+        >
+          ✨ I'm feeling lucky
+        </span>
+        <span className="mt-[0.6cqw] block">{idea.caption}</span>
+      </div>
+    </>
+  );
+}
+
+function BgSwap({
+  imageUrl,
+  idea,
+  fontFamily,
+  offset,
+}: MemeOverrides & {
+  imageUrl: string;
+  idea: Extract<MemeIdea, { format: "bgswap" }>;
+}) {
+  return (
+    <>
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+      />
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(124,58,237,0.55) 0%, rgba(236,72,153,0.45) 50%, rgba(14,165,233,0.55) 100%)",
+          mixBlendMode: "multiply",
+        }}
+      />
+      <div
+        className="absolute inset-x-[6cqw] top-[8cqw] rounded-[1.5cqw] bg-black/65 px-[3cqw] py-[2cqw] text-center text-white ring-1 ring-white/25 backdrop-blur-sm"
+        style={{
+          fontFamily: font(fontFamily, SANS_FONT),
+        }}
+      >
+        <div
+          style={{
+            fontSize: "2.6cqw",
+            letterSpacing: "0.14em",
+            textTransform: "uppercase",
+            opacity: 0.75,
+          }}
+        >
+          Background → AI
+        </div>
+        <div
+          style={{
+            fontSize: "5cqw",
+            fontWeight: 800,
+            lineHeight: 1.15,
+            marginTop: "0.6cqw",
+          }}
+        >
+          {idea.scene}
+        </div>
+      </div>
+      <div
+        className="absolute inset-x-[4cqw] bottom-[4cqw] rounded-[1.5cqw] bg-white/95 px-[3cqw] py-[2cqw] text-center text-black ring-2 ring-black/30"
+        style={{
+          fontFamily: font(fontFamily, SANS_FONT),
+          fontWeight: 700,
+          fontSize: "4.5cqw",
           lineHeight: 1.2,
-          minHeight: "18%",
+          boxShadow: "0 0.4cqw 0.8cqw rgba(0,0,0,0.3)",
           ...translate(offset),
         }}
       >
         {idea.caption}
       </div>
-      <div className="relative flex-1">
-        <img
-          src={imageUrl}
-          alt=""
-          className="absolute inset-0 size-full object-cover"
-        />
-      </div>
-    </div>
+    </>
   );
 }
 
-function Speech({
+// 3 border anchors that hug the edges and leave the center of the image
+// (where the subject lives) free of sticker overlap. Order matters: TL → TR → BL.
+const STICKER_ANCHORS: ReadonlyArray<{ x: number; y: number; rot: number }> = [
+  { x: 14, y: 14, rot: -12 },
+  { x: 86, y: 14, rot: 14 },
+  { x: 14, y: 68, rot: 10 },
+];
+
+function Stickers({
   imageUrl,
   idea,
   fontFamily,
   offset,
 }: MemeOverrides & {
   imageUrl: string;
-  idea: Extract<MemeIdea, { format: "speech" }>;
+  idea: Extract<MemeIdea, { format: "stickers" }>;
+}) {
+  const positions = idea.stickers
+    .slice(0, 3)
+    .map((sticker, i) => ({ sticker, ...STICKER_ANCHORS[i]! }));
+  return (
+    <>
+      <img
+        src={imageUrl}
+        alt=""
+        className="absolute inset-0 size-full object-contain"
+      />
+      {positions.map((p, i) => (
+        <span
+          key={i}
+          className="absolute select-none"
+          style={{
+            left: `${p.x}%`,
+            top: `${p.y}%`,
+            fontSize: "13cqw",
+            transform: `translate(-50%, -50%) rotate(${p.rot}deg)`,
+            filter:
+              "drop-shadow(0 0.4cqw 0.6cqw rgba(0,0,0,0.55)) drop-shadow(0 0 0.3cqw rgba(255,255,255,0.5))",
+          }}
+        >
+          {p.sticker}
+        </span>
+      ))}
+      <div
+        className="absolute inset-x-[4cqw] bottom-[3cqw] rounded-[1.2cqw] bg-white px-[3cqw] py-[1.8cqw] text-center text-black ring-1 ring-black/30"
+        style={{
+          fontFamily: font(fontFamily, SANS_FONT),
+          fontWeight: 700,
+          fontSize: "4.2cqw",
+          lineHeight: 1.2,
+          boxShadow: "0 0.4cqw 0.8cqw rgba(0,0,0,0.3)",
+          ...translate(offset),
+        }}
+      >
+        {idea.caption}
+      </div>
+    </>
+  );
+}
+
+function Remix({
+  imageUrl,
+  idea,
+  fontFamily,
+  offset,
+}: MemeOverrides & {
+  imageUrl: string;
+  idea: Extract<MemeIdea, { format: "remix" }>;
 }) {
   return (
     <>
       <img
         src={imageUrl}
         alt=""
-        className="absolute inset-0 size-full object-cover"
+        className="absolute inset-0 size-full object-contain opacity-90"
       />
       <div
-        className="absolute top-[4cqw] left-[4cqw] max-w-[55%] rounded-[3cqw] bg-white px-[3cqw] py-[2cqw] text-black shadow-[0_1cqw_2cqw_rgba(0,0,0,0.25)]"
+        className="pointer-events-none absolute inset-0 border-[0.6cqw] border-dashed border-cyan-300/80"
+        style={{ borderRadius: "inherit" }}
+      />
+      <div
+        className="absolute top-[3cqw] right-[3cqw] rounded-full bg-cyan-400 px-[2.5cqw] py-[1cqw] text-black ring-2 ring-cyan-900/40"
         style={{
-          fontFamily: font(fontFamily, "inherit"),
+          fontFamily: font(fontFamily, SANS_FONT),
+          fontWeight: 800,
+          fontSize: "3cqw",
+          letterSpacing: "0.1em",
+          textTransform: "uppercase",
+        }}
+      >
+        🔁 Remix
+      </div>
+      <div
+        className="absolute inset-x-[4cqw] bottom-[4cqw] rounded-[1.5cqw] bg-black/90 px-[3cqw] py-[2cqw] text-center text-white ring-2 ring-white/30"
+        style={{
+          fontFamily: font(fontFamily, SANS_FONT),
+          fontWeight: 700,
           fontSize: "4.5cqw",
           lineHeight: 1.2,
-          fontWeight: 600,
+          boxShadow: "0 0.4cqw 0.8cqw rgba(0,0,0,0.4)",
           ...translate(offset),
         }}
       >
-        {idea.text}
-        <span
-          className="absolute bg-white"
-          style={{
-            bottom: "-1.8cqw",
-            left: "8cqw",
-            width: "4cqw",
-            height: "4cqw",
-            transform: "rotate(45deg)",
-            borderBottomRightRadius: "1cqw",
-          }}
-        />
-      </div>
-    </>
-  );
-}
-
-function Motivational({
-  imageUrl,
-  idea,
-  fontFamily,
-  offset,
-}: MemeOverrides & {
-  imageUrl: string;
-  idea: Extract<MemeIdea, { format: "motivational" }>;
-}) {
-  const family = font(fontFamily, SERIF_FONT);
-  return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-black p-[3cqw]">
-      <div
-        className="w-full border-white"
-        style={{ borderWidth: "0.3cqw", padding: "0.4cqw" }}
-      >
-        <div className="relative w-full" style={{ aspectRatio: "4 / 3" }}>
-          <img
-            src={imageUrl}
-            alt=""
-            className="absolute inset-0 size-full object-cover"
-          />
-        </div>
-      </div>
-      <div
-        className="mt-[2.5cqw] text-center text-white"
-        style={{
-          fontFamily: family,
-          fontSize: "9cqw",
-          lineHeight: 1,
-          letterSpacing: "0.05em",
-          ...translate(offset),
-        }}
-      >
-        {idea.title.toUpperCase()}
-      </div>
-      <div
-        className="mt-[1cqw] px-[3cqw] text-center text-white/90 italic"
-        style={{
-          fontFamily: family,
-          fontSize: "3.5cqw",
-          lineHeight: 1.2,
-          ...translate(offset),
-        }}
-      >
-        {idea.subtitle}
-      </div>
-    </div>
-  );
-}
-
-function Movie({
-  imageUrl,
-  idea,
-  fontFamily,
-  offset,
-}: MemeOverrides & {
-  imageUrl: string;
-  idea: Extract<MemeIdea, { format: "movie" }>;
-}) {
-  const family = font(fontFamily, SERIF_FONT);
-  return (
-    <>
-      <img
-        src={imageUrl}
-        alt=""
-        className="absolute inset-0 size-full object-cover"
-      />
-      <div
-        className="absolute inset-x-0 bottom-0 pt-[15cqw] pb-[4cqw]"
-        style={{
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0) 100%)",
-          ...translate(offset),
-        }}
-      >
-        <div
-          className="px-[4cqw] text-center text-white"
-          style={{
-            fontFamily: family,
-            fontSize: "3cqw",
-            letterSpacing: "0.4em",
-            textTransform: "uppercase",
-            opacity: 0.85,
-          }}
-        >
-          {idea.tagline}
-        </div>
-        <div
-          className="mt-[1.5cqw] px-[3cqw] text-center text-white"
-          style={{
-            fontFamily: family,
-            fontWeight: 700,
-            fontSize: "12cqw",
-            lineHeight: 1,
-            letterSpacing: "0.02em",
-            textTransform: "uppercase",
-          }}
-        >
-          {idea.title}
-        </div>
-      </div>
-    </>
-  );
-}
-
-function Tabloid({
-  imageUrl,
-  idea,
-  fontFamily,
-  offset,
-}: MemeOverrides & {
-  imageUrl: string;
-  idea: Extract<MemeIdea, { format: "tabloid" }>;
-}) {
-  return (
-    <>
-      <img
-        src={imageUrl}
-        alt=""
-        className="absolute inset-0 size-full object-cover"
-      />
-      <div
-        className="absolute inset-x-0 top-0"
-        style={{ background: "#FFE600", ...translate(offset) }}
-      >
-        <div
-          className="px-[3cqw] py-[2.5cqw] text-center"
-          style={{
-            color: "#E10600",
-            fontFamily: font(fontFamily, TABLOID_FONT),
-            fontWeight: 900,
-            fontSize: "6cqw",
-            lineHeight: 1.05,
-            letterSpacing: "-0.01em",
-            textTransform: "uppercase",
-            WebkitTextStroke: "0.15cqw black",
-          }}
-        >
-          {idea.headline}
-        </div>
+        {idea.suggestedCaption}
       </div>
     </>
   );

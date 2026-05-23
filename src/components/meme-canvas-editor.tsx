@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Image, Layer, Rect, Stage, Text, Transformer } from "react-konva";
-import type Konva from "konva";
+import Konva from "konva";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Loading03Icon,
@@ -30,6 +30,8 @@ type TextNode = {
   fontStyle?: "normal" | "italic" | "bold" | "italic bold";
   letterSpacing?: number;
   uppercase?: boolean;
+  shadowColor?: string;
+  shadowBlurFrac?: number;
 };
 
 type DecRect = {
@@ -40,6 +42,8 @@ type DecRect = {
   nh: number;
   fill: string;
   cornerRadiusFrac?: number;
+  stroke?: string;
+  strokeWidthFrac?: number;
 };
 
 type DecGradient = {
@@ -76,21 +80,21 @@ const FONT_OPTIONS = [
 ] as const;
 
 const FORMAT_LABELS: Record<MemeFormat, string> = {
+  lucky: "Lucky",
   classic: "Classic",
-  caption: "Caption",
-  speech: "Speech",
-  motivational: "Motivational",
-  movie: "Movie",
-  tabloid: "Tabloid",
+  deepfried: "Deep-fried",
+  bgswap: "Scene swap",
+  stickers: "Stickered",
+  remix: "Remix",
 };
 
 const FORMAT_ORDER: MemeFormat[] = [
+  "lucky",
   "classic",
-  "caption",
-  "speech",
-  "motivational",
-  "movie",
-  "tabloid",
+  "deepfried",
+  "bgswap",
+  "stickers",
+  "remix",
 ];
 
 // --- Initial state per format ---
@@ -105,173 +109,230 @@ function buildState(idea: MemeIdea): FormatState {
           impactText("bottom", "Bottom", idea.bottomText, 0.84),
         ],
       };
-    case "caption":
+    case "deepfried":
+      return {
+        decorations: [],
+        texts: [
+          deepFriedText("top", "Top", idea.topText, 0.03),
+          deepFriedText("bottom", "Bottom", idea.bottomText, 0.83),
+        ],
+      };
+    case "lucky":
       return {
         decorations: [
-          { kind: "rect", nx: 0, ny: 0, nw: 1, nh: 0.18, fill: "#FFFFFF" },
+          {
+            kind: "rect",
+            nx: 0.06,
+            ny: 0.7,
+            nw: 0.88,
+            nh: 0.22,
+            fill: "#FCE7A3",
+            cornerRadiusFrac: 0.025,
+            stroke: "rgba(0,0,0,0.45)",
+            strokeWidthFrac: 0.004,
+          },
+        ],
+        texts: [
+          {
+            id: "luckyTag",
+            label: "Tag",
+            value: "I'M FEELING LUCKY ✨",
+            nx: 0.08,
+            ny: 0.73,
+            nw: 0.84,
+            fontSizeFrac: 0.028,
+            fontFamily: FONT_SANS,
+            fill: "#7C2D12",
+            align: "center",
+            fontStyle: "bold",
+            letterSpacing: 4,
+          },
+          {
+            id: "caption",
+            label: "Caption",
+            value: idea.caption,
+            nx: 0.08,
+            ny: 0.78,
+            nw: 0.84,
+            fontSizeFrac: 0.052,
+            fontFamily: FONT_SANS,
+            fill: "#1F2937",
+            align: "center",
+            fontStyle: "bold",
+          },
+        ],
+      };
+    case "bgswap":
+      return {
+        decorations: [
+          {
+            kind: "rect",
+            nx: 0.04,
+            ny: 0.82,
+            nw: 0.92,
+            nh: 0.13,
+            fill: "rgba(255,255,255,0.95)",
+            cornerRadiusFrac: 0.018,
+            stroke: "rgba(0,0,0,0.45)",
+            strokeWidthFrac: 0.004,
+          },
         ],
         texts: [
           {
             id: "caption",
             label: "Caption",
             value: idea.caption,
-            nx: 0.04,
-            ny: 0.045,
-            nw: 0.92,
-            fontSizeFrac: 0.055,
+            nx: 0.06,
+            ny: 0.845,
+            nw: 0.88,
+            fontSizeFrac: 0.045,
             fontFamily: FONT_SANS,
-            fill: "#000000",
+            fill: "#0F172A",
             align: "center",
             fontStyle: "bold",
           },
         ],
       };
-    case "speech":
+    case "stickers":
       return {
         decorations: [
           {
             kind: "rect",
             nx: 0.04,
-            ny: 0.04,
-            nw: 0.55,
-            nh: 0.18,
+            ny: 0.85,
+            nw: 0.92,
+            nh: 0.11,
             fill: "#FFFFFF",
-            cornerRadiusFrac: 0.03,
+            cornerRadiusFrac: 0.014,
+            stroke: "rgba(0,0,0,0.45)",
+            strokeWidthFrac: 0.004,
+          },
+        ],
+        texts: [
+          ...placeStickers(idea.stickers),
+          {
+            id: "caption",
+            label: "Caption",
+            value: idea.caption,
+            nx: 0.06,
+            ny: 0.87,
+            nw: 0.88,
+            fontSizeFrac: 0.042,
+            fontFamily: FONT_SANS,
+            fill: "#0F172A",
+            align: "center",
+            fontStyle: "bold",
+          },
+        ],
+      };
+    case "remix":
+      return {
+        decorations: [
+          {
+            kind: "rect",
+            nx: 0.04,
+            ny: 0.82,
+            nw: 0.92,
+            nh: 0.13,
+            fill: "rgba(0,0,0,0.9)",
+            cornerRadiusFrac: 0.018,
+            stroke: "rgba(255,255,255,0.4)",
+            strokeWidthFrac: 0.004,
+          },
+          {
+            kind: "rect",
+            nx: 0.7,
+            ny: 0.04,
+            nw: 0.26,
+            nh: 0.07,
+            fill: "#22D3EE",
+            cornerRadiusFrac: 0.035,
+            stroke: "rgba(0,32,40,0.55)",
+            strokeWidthFrac: 0.004,
           },
         ],
         texts: [
           {
-            id: "text",
-            label: "Speech",
-            value: idea.text,
-            nx: 0.07,
-            ny: 0.075,
-            nw: 0.49,
+            id: "remixTag",
+            label: "Tag",
+            value: "🔁 REMIX",
+            nx: 0.7,
+            ny: 0.055,
+            nw: 0.26,
+            fontSizeFrac: 0.028,
+            fontFamily: FONT_SANS,
+            fill: "#0F172A",
+            align: "center",
+            fontStyle: "bold",
+            letterSpacing: 2,
+          },
+          {
+            id: "caption",
+            label: "Caption",
+            value: idea.suggestedCaption,
+            nx: 0.06,
+            ny: 0.845,
+            nw: 0.88,
             fontSizeFrac: 0.045,
             fontFamily: FONT_SANS,
-            fill: "#000000",
-            fontStyle: "bold",
-          },
-        ],
-      };
-    case "motivational":
-      return {
-        decorations: [
-          {
-            kind: "gradient",
-            nx: 0,
-            ny: 0.62,
-            nw: 1,
-            nh: 0.38,
-            stops: [
-              [0, "rgba(0,0,0,0)"],
-              [0.45, "rgba(0,0,0,0.85)"],
-              [1, "rgba(0,0,0,0.98)"],
-            ],
-          },
-        ],
-        texts: [
-          {
-            id: "title",
-            label: "Title",
-            value: idea.title,
-            nx: 0,
-            ny: 0.78,
-            nw: 1,
-            fontSizeFrac: 0.085,
-            fontFamily: FONT_SERIF,
-            fill: "#FFFFFF",
-            align: "center",
-            letterSpacing: 2,
-            uppercase: true,
-          },
-          {
-            id: "subtitle",
-            label: "Subtitle",
-            value: idea.subtitle,
-            nx: 0.1,
-            ny: 0.9,
-            nw: 0.8,
-            fontSizeFrac: 0.034,
-            fontFamily: FONT_SERIF,
-            fill: "#FFFFFFE6",
-            align: "center",
-            fontStyle: "italic",
-          },
-        ],
-      };
-    case "movie":
-      return {
-        decorations: [
-          {
-            kind: "gradient",
-            nx: 0,
-            ny: 0.55,
-            nw: 1,
-            nh: 0.45,
-            stops: [
-              [0, "rgba(0,0,0,0)"],
-              [0.6, "rgba(0,0,0,0.7)"],
-              [1, "rgba(0,0,0,0.95)"],
-            ],
-          },
-        ],
-        texts: [
-          {
-            id: "tagline",
-            label: "Tagline",
-            value: idea.tagline,
-            nx: 0.04,
-            ny: 0.78,
-            nw: 0.92,
-            fontSizeFrac: 0.03,
-            fontFamily: FONT_SERIF,
-            fill: "#FFFFFFD9",
-            align: "center",
-            letterSpacing: 6,
-            uppercase: true,
-          },
-          {
-            id: "title",
-            label: "Title",
-            value: idea.title,
-            nx: 0.03,
-            ny: 0.84,
-            nw: 0.94,
-            fontSizeFrac: 0.115,
-            fontFamily: FONT_SERIF,
             fill: "#FFFFFF",
             align: "center",
             fontStyle: "bold",
-            uppercase: true,
-          },
-        ],
-      };
-    case "tabloid":
-      return {
-        decorations: [
-          { kind: "rect", nx: 0, ny: 0, nw: 1, nh: 0.15, fill: "#FFE600" },
-        ],
-        texts: [
-          {
-            id: "headline",
-            label: "Headline",
-            value: idea.headline,
-            nx: 0.03,
-            ny: 0.025,
-            nw: 0.94,
-            fontSizeFrac: 0.06,
-            fontFamily: FONT_BLACK,
-            fill: "#E10600",
-            stroke: "#000000",
-            strokeWidthFrac: 0.0015,
-            align: "center",
-            fontStyle: "bold",
-            uppercase: true,
           },
         ],
       };
   }
+}
+
+// Three border anchors that keep stickers off the photo's center subject.
+// Order: top-left, top-right, lower-left. Mirrors STICKER_ANCHORS in meme-preview.tsx.
+const STICKER_ANCHORS_NORM: ReadonlyArray<{ nx: number; ny: number }> = [
+  { nx: 0.05, ny: 0.05 },
+  { nx: 0.77, ny: 0.05 },
+  { nx: 0.05, ny: 0.6 },
+];
+
+function placeStickers(stickers: string[]): TextNode[] {
+  return stickers.slice(0, 3).map((sticker, i) => {
+    const anchor = STICKER_ANCHORS_NORM[i]!;
+    return {
+      id: `sticker-${i}`,
+      label: `Sticker ${i + 1}`,
+      value: sticker,
+      nx: anchor.nx,
+      ny: anchor.ny,
+      nw: 0.18,
+      fontSizeFrac: 0.13,
+      fontFamily: FONT_SANS,
+      fill: "#000000",
+      align: "center",
+    };
+  });
+}
+
+function deepFriedText(
+  id: string,
+  label: string,
+  value: string,
+  ny: number,
+): TextNode {
+  return {
+    id,
+    label,
+    value,
+    nx: 0.03,
+    ny,
+    nw: 0.94,
+    fontSizeFrac: 0.11,
+    fontFamily: FONT_IMPACT,
+    fill: "#FFEA00",
+    stroke: "#B30000",
+    strokeWidthFrac: 0.006,
+    align: "center",
+    uppercase: true,
+    shadowColor: "#B30000",
+    shadowBlurFrac: 0.015,
+  };
 }
 
 function impactText(
@@ -320,10 +381,17 @@ function useImage(url: string): HTMLImageElement | null {
 
 // --- Main editor ---
 
+export type BgSwapState =
+  | { status: "idle" }
+  | { status: "loading"; scene: string }
+  | { status: "ready"; scene: string; dataUrl: string }
+  | { status: "error"; scene: string; message: string };
+
 type Props = {
   imageUrl: string;
   initialIdea: MemeIdea;
   ideas: MemeIdea[];
+  bgSwap: BgSwapState;
   onShare: (dataUrl: string) => void;
   isSharing?: boolean;
 };
@@ -332,6 +400,7 @@ export function MemeCanvasEditor({
   imageUrl,
   initialIdea,
   ideas,
+  bgSwap,
   onShare,
   isSharing,
 }: Props) {
@@ -349,14 +418,36 @@ export function MemeCanvasEditor({
     return () => obs.disconnect();
   }, []);
 
-  const img = useImage(imageUrl);
+  const [format, setFormat] = useState<MemeFormat>(initialIdea.format);
+
+  // While we retry until success, surface "loading" for any non-ready state.
+  const bgSwapping = format === "bgswap" && bgSwap.status !== "ready";
+  const swappedUrl =
+    format === "bgswap" && bgSwap.status === "ready" ? bgSwap.dataUrl : null;
+  const sceneKey = bgSwap.status === "idle" ? "" : bgSwap.scene;
+
+  const effectiveImageUrl = swappedUrl ?? imageUrl;
+  const img = useImage(effectiveImageUrl);
 
   const [formatStates, setFormatStates] = useState<
     Partial<Record<MemeFormat, FormatState>>
   >(() => ({ [initialIdea.format]: buildState(initialIdea) }));
-  const [format, setFormat] = useState<MemeFormat>(initialIdea.format);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedDeco, setSelectedDeco] = useState<number | null>(null);
   const [fontOverride, setFontOverride] = useState<string | null>(null);
+
+  const selectText = (id: string) => {
+    setSelectedDeco(null);
+    setSelectedId(id);
+  };
+  const selectDeco = (i: number) => {
+    setSelectedId(null);
+    setSelectedDeco(i);
+  };
+  const clearSelection = () => {
+    setSelectedId(null);
+    setSelectedDeco(null);
+  };
 
   const stateFor = (f: MemeFormat): FormatState => {
     const stored = formatStates[f];
@@ -380,6 +471,54 @@ export function MemeCanvasEditor({
     });
   };
 
+  const translateText = (id: string, dnx: number, dny: number) => {
+    setFormatStates((prev) => {
+      const base = prev[format] ?? stateFor(format);
+      return {
+        ...prev,
+        [format]: {
+          ...base,
+          texts: base.texts.map((t) =>
+            t.id === id ? { ...t, nx: t.nx + dnx, ny: t.ny + dny } : t,
+          ),
+        },
+      };
+    });
+  };
+
+  const translateDecoration = (index: number, dnx: number, dny: number) => {
+    setFormatStates((prev) => {
+      const base = prev[format] ?? stateFor(format);
+      return {
+        ...prev,
+        [format]: {
+          ...base,
+          decorations: base.decorations.map((d, i) =>
+            i === index ? { ...d, nx: d.nx + dnx, ny: d.ny + dny } : d,
+          ),
+        },
+      };
+    });
+  };
+
+  const resizeDecoration = (
+    index: number,
+    box: { nx: number; ny: number; nw: number; nh: number },
+  ) => {
+    setFormatStates((prev) => {
+      const base = prev[format] ?? stateFor(format);
+      return {
+        ...prev,
+        [format]: {
+          ...base,
+          decorations: base.decorations.map((d, i) =>
+            i === index ? { ...d, ...box } : d,
+          ),
+        },
+      };
+    });
+  };
+
   const cycleFont = () => {
     const idx = FONT_OPTIONS.findIndex((o) => o.family === fontOverride);
     const next =
@@ -394,7 +533,7 @@ export function MemeCanvasEditor({
   const handleShare = () => {
     const stage = stageRef.current;
     if (!stage) return;
-    setSelectedId(null);
+    clearSelection();
     // Defer to next frame so the transformer un-renders before snapshot.
     requestAnimationFrame(() => {
       const dataUrl = stage.toDataURL({ pixelRatio: 2 });
@@ -403,11 +542,11 @@ export function MemeCanvasEditor({
   };
 
   return (
-    <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_220px]">
-      <div className="flex flex-col gap-3">
+    <div className="grid gap-4 sm:h-full sm:min-h-0 sm:grid-cols-[minmax(0,1fr)_220px] sm:grid-rows-[minmax(0,1fr)]">
+      <div className="sticky top-0 z-10 flex flex-col gap-3 bg-popover pt-1 pb-2 sm:static sm:min-h-0 sm:overflow-hidden sm:bg-transparent sm:pt-0 sm:pb-0">
         <div
           ref={containerRef}
-          className="relative aspect-square w-full overflow-hidden rounded-xl bg-black ring-1 ring-border"
+          className="relative mx-auto aspect-square w-full max-w-[75vw] overflow-hidden rounded-xl bg-black ring-1 ring-border sm:max-w-[calc(90vh-220px)]"
         >
           {img && size > 0 && state && (
             <Stage
@@ -415,16 +554,29 @@ export function MemeCanvasEditor({
               width={size}
               height={size}
               onMouseDown={(e) => {
-                if (e.target === e.target.getStage()) setSelectedId(null);
+                if (e.target === e.target.getStage()) clearSelection();
               }}
               onTouchStart={(e) => {
-                if (e.target === e.target.getStage()) setSelectedId(null);
+                if (e.target === e.target.getStage()) clearSelection();
               }}
             >
               <Layer>
-                <CoverImage img={img} size={size} />
+                <CoverImage
+                  img={img}
+                  size={size}
+                  filter={format === "deepfried" ? "deepfried" : undefined}
+                />
+                {format === "deepfried" && <DeepFriedBlobs size={size} />}
                 {state.decorations.map((d, i) => (
-                  <DecorationNode key={i} dec={d} size={size} />
+                  <DecorationNode
+                    key={i}
+                    dec={d}
+                    size={size}
+                    selected={selectedDeco === i}
+                    onSelect={() => selectDeco(i)}
+                    onTranslate={(dnx, dny) => translateDecoration(i, dnx, dny)}
+                    onResize={(box) => resizeDecoration(i, box)}
+                  />
                 ))}
                 {state.texts.map((t) => (
                   <EditableTextNode
@@ -433,12 +585,30 @@ export function MemeCanvasEditor({
                     size={size}
                     fontFamily={fontOverride ?? t.fontFamily}
                     selected={selectedId === t.id}
-                    onSelect={() => setSelectedId(t.id)}
+                    onSelect={() => selectText(t.id)}
                     onChange={(patch) => patchText(t.id, patch)}
+                    onTranslate={(dnx, dny) => translateText(t.id, dnx, dny)}
                   />
                 ))}
               </Layer>
             </Stage>
+          )}
+          {format === "bgswap" && bgSwapping && (
+            <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/55 text-white">
+              <HugeiconsIcon
+                icon={Loading03Icon}
+                className="size-7 animate-spin"
+              />
+              <p className="px-4 text-center text-xs font-medium">
+                Building your new background…
+                {sceneKey ? (
+                  <>
+                    <br />
+                    <span className="text-white/70">{sceneKey}</span>
+                  </>
+                ) : null}
+              </p>
+            </div>
           )}
         </div>
 
@@ -449,7 +619,7 @@ export function MemeCanvasEditor({
               key={f}
               type="button"
               onClick={() => {
-                setSelectedId(null);
+                clearSelection();
                 setFormat(f);
               }}
               className={cn(
@@ -463,53 +633,106 @@ export function MemeCanvasEditor({
             </button>
           ))}
         </div>
+
+        {/* Mobile-only Share — lives inside the sticky region so it's
+            visible without scrolling. Desktop has its own copy in the side panel. */}
+        <button
+          type="button"
+          onClick={handleShare}
+          disabled={isSharing}
+          className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70 sm:hidden"
+        >
+          <HugeiconsIcon
+            icon={isSharing ? Loading03Icon : Share05Icon}
+            className={isSharing ? "size-4 animate-spin" : "size-4"}
+          />
+          {isSharing ? "Sharing…" : "Share"}
+        </button>
       </div>
 
       {/* Side panel */}
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2.5">
-          {state?.texts.map((t) => (
-            <label key={t.id} className="flex flex-col gap-1">
-              <span className="text-xs font-medium text-muted-foreground">
-                {t.label}
-              </span>
-              <textarea
-                rows={2}
-                value={t.value}
-                onChange={(e) => patchText(t.id, { value: e.target.value })}
-                className="w-full resize-none rounded-md border border-input bg-background px-2 py-1.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
-              />
-            </label>
-          ))}
+      <div className="flex flex-col gap-3 sm:min-h-0">
+        <div className="flex flex-col gap-3 sm:min-h-0 sm:flex-1 sm:overflow-y-auto sm:pr-1">
+          <div className="flex flex-col gap-2.5">
+            {state?.texts.map((t) => (
+              <div key={t.id} className="flex flex-col gap-1">
+                <span className="text-xs font-medium text-muted-foreground">
+                  {t.label}
+                </span>
+                <textarea
+                  rows={2}
+                  value={t.value}
+                  onChange={(e) => patchText(t.id, { value: e.target.value })}
+                  className="w-full resize-none rounded-md border border-input bg-background px-2 py-1.5 text-sm focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/40"
+                />
+                <div className="flex items-center gap-2">
+                  <label
+                    className="relative inline-flex size-7 shrink-0 cursor-pointer items-center justify-center overflow-hidden rounded-md border border-input"
+                    title="Text color"
+                  >
+                    <span
+                      className="size-full"
+                      style={{ backgroundColor: t.fill.slice(0, 7) }}
+                    />
+                    <input
+                      type="color"
+                      value={t.fill.slice(0, 7)}
+                      onChange={(e) =>
+                        patchText(t.id, { fill: e.target.value })
+                      }
+                      className="absolute inset-0 size-full cursor-pointer opacity-0"
+                    />
+                  </label>
+                  <input
+                    type="range"
+                    min={0.02}
+                    max={0.2}
+                    step={0.005}
+                    value={t.fontSizeFrac}
+                    onChange={(e) =>
+                      patchText(t.id, {
+                        fontSizeFrac: Number(e.target.value),
+                      })
+                    }
+                    className="h-1.5 flex-1 cursor-pointer accent-primary"
+                    title="Font size"
+                  />
+                  <span className="w-7 text-right text-[10px] tabular-nums text-muted-foreground">
+                    {Math.round(t.fontSizeFrac * 100)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={cycleFont}
+            className="flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent"
+          >
+            <span className="flex items-center gap-2">
+              <HugeiconsIcon icon={TextFontIcon} className="size-4" />
+              Font
+            </span>
+            <span className="text-xs text-muted-foreground">{fontLabel}</span>
+          </button>
+
+          {(selectedId || selectedDeco !== null) && (
+            <NudgeControls
+              onNudge={(dx, dy) => {
+                if (selectedId) translateText(selectedId, dx, dy);
+                else if (selectedDeco !== null)
+                  translateDecoration(selectedDeco, dx, dy);
+              }}
+            />
+          )}
         </div>
-
-        <button
-          type="button"
-          onClick={cycleFont}
-          className="flex items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm hover:bg-accent"
-        >
-          <span className="flex items-center gap-2">
-            <HugeiconsIcon icon={TextFontIcon} className="size-4" />
-            Font
-          </span>
-          <span className="text-xs text-muted-foreground">{fontLabel}</span>
-        </button>
-
-        {selectedId && (
-          <NudgeControls
-            onNudge={(dx, dy) => {
-              const t = state?.texts.find((x) => x.id === selectedId);
-              if (!t) return;
-              patchText(selectedId, { nx: t.nx + dx, ny: t.ny + dy });
-            }}
-          />
-        )}
 
         <button
           type="button"
           onClick={handleShare}
           disabled={isSharing}
-          className="mt-auto inline-flex items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70"
+          className="hidden items-center justify-center gap-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-70 sm:inline-flex"
         >
           <HugeiconsIcon
             icon={isSharing ? Loading03Icon : Share05Icon}
@@ -558,50 +781,193 @@ function NudgeControls({
 
 // --- Konva nodes ---
 
+// Fits the full image inside the square stage with letterbox bars (the stage's
+// black background shows through). Switched from cover→contain so the user's
+// image is never cropped. The optional filter mode applies Konva HSL+Contrast
+// filters for the deep-fried look so the shared PNG matches the grid preview.
 function CoverImage({
   img,
   size,
+  filter,
 }: {
   img: HTMLImageElement;
   size: number;
+  filter?: "deepfried";
 }) {
+  const ref = useRef<Konva.Image>(null);
   const iw = img.naturalWidth || 1;
   const ih = img.naturalHeight || 1;
-  const scale = Math.max(size / iw, size / ih);
+  const scale = Math.min(size / iw, size / ih);
   const w = iw * scale;
   const h = ih * scale;
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    if (filter === "deepfried") {
+      node.cache();
+    } else {
+      node.clearCache();
+    }
+    node.getLayer()?.batchDraw();
+  }, [filter, img, w, h]);
+
+  const filters =
+    filter === "deepfried" ? [Konva.Filters.HSL, Konva.Filters.Contrast] : undefined;
+
   return (
     <Image
+      ref={ref}
       image={img}
       x={(size - w) / 2}
       y={(size - h) / 2}
       width={w}
       height={h}
       listening={false}
+      filters={filters}
+      hue={filter === "deepfried" ? -8 : 0}
+      saturation={filter === "deepfried" ? 1.4 : 0}
+      luminance={filter === "deepfried" ? 0.05 : 0}
+      contrast={filter === "deepfried" ? 40 : 0}
     />
+  );
+}
+
+// Two radial "deep-fried" color blobs blended overlay-style, matching the CSS
+// preview gradients in meme-preview.tsx. Rendered above the image but below
+// any decoration banners and text.
+function DeepFriedBlobs({ size }: { size: number }) {
+  return (
+    <>
+      <Rect
+        x={0}
+        y={0}
+        width={size}
+        height={size}
+        fillRadialGradientStartPoint={{ x: 0.3 * size, y: 0.25 * size }}
+        fillRadialGradientStartRadius={0}
+        fillRadialGradientEndPoint={{ x: 0.3 * size, y: 0.25 * size }}
+        fillRadialGradientEndRadius={0.55 * size}
+        fillRadialGradientColorStops={[
+          0,
+          "rgba(255,80,0,0.45)",
+          1,
+          "rgba(255,80,0,0)",
+        ]}
+        globalCompositeOperation="overlay"
+        listening={false}
+      />
+      <Rect
+        x={0}
+        y={0}
+        width={size}
+        height={size}
+        fillRadialGradientStartPoint={{ x: 0.75 * size, y: 0.8 * size }}
+        fillRadialGradientStartRadius={0}
+        fillRadialGradientEndPoint={{ x: 0.75 * size, y: 0.8 * size }}
+        fillRadialGradientEndRadius={0.55 * size}
+        fillRadialGradientColorStops={[
+          0,
+          "rgba(255,255,0,0.35)",
+          1,
+          "rgba(255,255,0,0)",
+        ]}
+        globalCompositeOperation="overlay"
+        listening={false}
+      />
+    </>
   );
 }
 
 function DecorationNode({
   dec,
   size,
+  selected,
+  onSelect,
+  onTranslate,
+  onResize,
 }: {
   dec: Decoration;
   size: number;
+  selected: boolean;
+  onSelect: () => void;
+  onTranslate: (dnx: number, dny: number) => void;
+  onResize: (box: { nx: number; ny: number; nw: number; nh: number }) => void;
 }) {
+  const rectRef = useRef<Konva.Rect>(null);
+  const transformerRef = useRef<Konva.Transformer>(null);
+
+  useEffect(() => {
+    if (selected && rectRef.current && transformerRef.current) {
+      transformerRef.current.nodes([rectRef.current]);
+      transformerRef.current.getLayer()?.batchDraw();
+    }
+  }, [selected]);
+
   if (dec.kind === "rect") {
     return (
-      <Rect
-        x={dec.nx * size}
-        y={dec.ny * size}
-        width={dec.nw * size}
-        height={dec.nh * size}
-        fill={dec.fill}
-        cornerRadius={(dec.cornerRadiusFrac ?? 0) * size}
-        listening={false}
-      />
+      <>
+        <Rect
+          ref={rectRef}
+          x={dec.nx * size}
+          y={dec.ny * size}
+          width={dec.nw * size}
+          height={dec.nh * size}
+          fill={dec.fill}
+          cornerRadius={(dec.cornerRadiusFrac ?? 0) * size}
+          stroke={dec.stroke}
+          strokeWidth={(dec.strokeWidthFrac ?? 0) * size}
+          draggable
+          onClick={onSelect}
+          onTap={onSelect}
+          onDragEnd={(e) => {
+            const newNx = e.target.x() / size;
+            const newNy = e.target.y() / size;
+            onTranslate(newNx - dec.nx, newNy - dec.ny);
+          }}
+          onTransformEnd={() => {
+            const r = rectRef.current;
+            if (!r) return;
+            const sx = r.scaleX();
+            const sy = r.scaleY();
+            const newW = Math.max(20, r.width() * sx);
+            const newH = Math.max(20, r.height() * sy);
+            r.scaleX(1);
+            r.scaleY(1);
+            r.width(newW);
+            r.height(newH);
+            onResize({
+              nx: r.x() / size,
+              ny: r.y() / size,
+              nw: newW / size,
+              nh: newH / size,
+            });
+          }}
+        />
+        {selected && (
+          <Transformer
+            ref={transformerRef}
+            rotateEnabled={false}
+            enabledAnchors={[
+              "top-left",
+              "top-right",
+              "bottom-left",
+              "bottom-right",
+              "top-center",
+              "bottom-center",
+              "middle-left",
+              "middle-right",
+            ]}
+            boundBoxFunc={(oldBox, newBox) =>
+              newBox.width > 20 && newBox.height > 20 ? newBox : oldBox
+            }
+          />
+        )}
+      </>
     );
   }
+  // Gradient overlays (unused by current formats) stay non-interactive — they're
+  // mood washes, not interactive elements.
   const colorStops: (number | string)[] = [];
   for (const [offset, color] of dec.stops) colorStops.push(offset, color);
   return (
@@ -625,6 +991,7 @@ function EditableTextNode({
   selected,
   onSelect,
   onChange,
+  onTranslate,
 }: {
   node: TextNode;
   size: number;
@@ -632,6 +999,7 @@ function EditableTextNode({
   selected: boolean;
   onSelect: () => void;
   onChange: (patch: Partial<TextNode>) => void;
+  onTranslate: (dnx: number, dny: number) => void;
 }) {
   const textRef = useRef<Konva.Text>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
@@ -662,14 +1030,16 @@ function EditableTextNode({
         fillAfterStrokeEnabled
         align={node.align ?? "left"}
         letterSpacing={node.letterSpacing}
+        shadowColor={node.shadowColor}
+        shadowBlur={(node.shadowBlurFrac ?? 0) * size}
+        shadowOpacity={node.shadowColor ? 1 : 0}
         draggable
         onClick={onSelect}
         onTap={onSelect}
         onDragEnd={(e) => {
-          onChange({
-            nx: e.target.x() / size,
-            ny: e.target.y() / size,
-          });
+          const newNx = e.target.x() / size;
+          const newNy = e.target.y() / size;
+          onTranslate(newNx - node.nx, newNy - node.ny);
         }}
       />
       {selected && (

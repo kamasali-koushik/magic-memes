@@ -164,39 +164,39 @@ export function fileToDataUrl(file: File | Blob): Promise<string> {
   });
 }
 
-// --- Meme ideas (vision LLM → six format-specific captions) ---
+// --- Meme ideas (vision LLM → six feature-specific outputs) ---
 
 export type MemeIdea =
+  | { format: "lucky"; caption: string; imageGenPrompt: string }
   | { format: "classic"; topText: string; bottomText: string }
-  | { format: "caption"; caption: string }
-  | { format: "speech"; text: string }
-  | { format: "motivational"; title: string; subtitle: string }
-  | { format: "movie"; title: string; tagline: string }
-  | { format: "tabloid"; headline: string };
+  | { format: "deepfried"; topText: string; bottomText: string }
+  | { format: "bgswap"; caption: string; scene: string }
+  | { format: "stickers"; caption: string; stickers: string[] }
+  | { format: "remix"; suggestedCaption: string };
 
 export type MemeFormat = MemeIdea["format"];
 
 export const MEME_FORMATS: readonly MemeFormat[] = [
+  "lucky",
   "classic",
-  "caption",
-  "speech",
-  "motivational",
-  "movie",
-  "tabloid",
+  "deepfried",
+  "bgswap",
+  "stickers",
+  "remix",
 ] as const;
 
-const MEME_IDEAS_PROMPT = `Look at this photo carefully. Write SIX meme ideas — one for each format below — based on what's actually in the picture. Reference real details: expressions, poses, objects, setting, vibe. Be specific, funny, internet-native. Avoid generic captions that could apply to any photo.
+const MEME_IDEAS_PROMPT = `Look at this photo carefully. Write SIX meme ideas — one per format below — based on what's actually in the picture. Reference real details: expressions, poses, outfits, objects, setting, mood. Be funny, sarcastic, internet-native. Generic captions will be rejected — always anchor on something specific you can see.
 
 Formats:
-1. classic — Impact-style image macro. "topText" (≤6 words, ALL CAPS) and "bottomText" (≤8 words, ALL CAPS).
-2. caption — modern single caption above the photo. "caption" (1 short line, lowercase ok, can be a POV/me/when setup).
-3. speech — short line as if a subject in the photo is speaking/thinking. "text" (≤10 words).
-4. motivational — fake inspirational poster. "title" (one or two words, ALL CAPS) and "subtitle" (one biting sentence, sentence case).
-5. movie — fake blockbuster. "title" (≤5 words, dramatic) and "tagline" (≤12 words).
-6. tabloid — sensational tabloid headline. "headline" (≤12 words, can mix ALL CAPS).
+1. lucky — one chaotic re-imagined meme via image generation. "caption" (≤12 words, short funny line for the preview overlay) and "imageGenPrompt" (2–4 sentences describing how to remix the photo into a meme; pick a style at random — deep-fried, distracted-boyfriend labels, fake motivational poster, fake movie poster, sensational tabloid — reference SPECIFIC photo details; keep the people/scene recognizable but lean hard into the chosen aesthetic).
+2. classic — Impact-style image macro. "topText" (≤6 words, ALL CAPS) and "bottomText" (≤8 words, ALL CAPS).
+3. deepfried — over-saturated, unhinged chaotic energy. "topText" (≤6 words, ALL CAPS, slightly broken-brain) and "bottomText" (≤8 words, ALL CAPS, slightly broken-brain).
+4. bgswap — subject teleported to an absurd new setting. "caption" (≤12 words, sarcastic line that pays off the scene swap) and "scene" (1–3 words for the backdrop, e.g., "mars surface", "1990s mall", "deep underwater").
+5. stickers — meme decorated with emoji stickers tied to what's actually in the photo. "caption" (≤12 words, short funny line) and "stickers" (array of EXACTLY 3 emoji that LITERALLY match what's visible: chef → 🔥🔪🍳, crown/king pose → 👑✨💎, serious face → 💀💯🧠, dog → 🐶🦴🐾, food → 🍕🤤🔥, gym → 💪🥵💯, etc. Generic vibes-only emoji like ✨ or 💯 alone will be rejected — at least 2 of the 3 must reference concrete details from the photo).
+6. remix — a punchy standalone caption to be slapped on a totally different meme template later. "suggestedCaption" (≤12 words, funny + sarcastic, must stand alone with no context).
 
-Return ONLY valid minified JSON, no prose, no markdown fences, matching exactly:
-{"ideas":[{"format":"classic","topText":"...","bottomText":"..."},{"format":"caption","caption":"..."},{"format":"speech","text":"..."},{"format":"motivational","title":"...","subtitle":"..."},{"format":"movie","title":"...","tagline":"..."},{"format":"tabloid","headline":"..."}]}`;
+Return ONLY valid minified JSON, no prose, no markdown fences:
+{"ideas":[{"format":"lucky","caption":"...","imageGenPrompt":"..."},{"format":"classic","topText":"...","bottomText":"..."},{"format":"deepfried","topText":"...","bottomText":"..."},{"format":"bgswap","caption":"...","scene":"..."},{"format":"stickers","caption":"...","stickers":["...","...","..."]},{"format":"remix","suggestedCaption":"..."}]}`;
 
 export type GenerateMemeIdeasParams = {
   image: ImageInput;
@@ -263,18 +263,28 @@ function coerceIdea(raw: unknown): MemeIdea | null {
   const format = o.format;
   const s = (v: unknown) => (typeof v === "string" ? v.trim() : "");
   switch (format) {
+    case "lucky":
+      return {
+        format,
+        caption: s(o.caption),
+        imageGenPrompt: s(o.imageGenPrompt),
+      };
     case "classic":
       return { format, topText: s(o.topText), bottomText: s(o.bottomText) };
-    case "caption":
-      return { format, caption: s(o.caption) };
-    case "speech":
-      return { format, text: s(o.text) };
-    case "motivational":
-      return { format, title: s(o.title), subtitle: s(o.subtitle) };
-    case "movie":
-      return { format, title: s(o.title), tagline: s(o.tagline) };
-    case "tabloid":
-      return { format, headline: s(o.headline) };
+    case "deepfried":
+      return { format, topText: s(o.topText), bottomText: s(o.bottomText) };
+    case "bgswap":
+      return { format, caption: s(o.caption), scene: s(o.scene) };
+    case "stickers":
+      return {
+        format,
+        caption: s(o.caption),
+        stickers: Array.isArray(o.stickers)
+          ? o.stickers.map((x) => s(x)).filter((x) => x.length > 0)
+          : [],
+      };
+    case "remix":
+      return { format, suggestedCaption: s(o.suggestedCaption) };
     default:
       return null;
   }

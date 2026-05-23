@@ -21,21 +21,28 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { generateMemeIdeas, type MemeIdea } from "@/api/open-router-api";
+import {
+  generateMemeIdeas,
+  generateMemeImage,
+  type MemeIdea,
+} from "@/api/open-router-api";
 import { uploadMeme, type ShareResult } from "@/api/share-api";
 import { MemePreview } from "@/components/meme-preview";
-import { MemeCanvasEditor } from "@/components/meme-canvas-editor";
+import {
+  MemeCanvasEditor,
+  type BgSwapState,
+} from "@/components/meme-canvas-editor";
 import { SharedView } from "@/components/shared-view";
 import loadingIcon from "@/assets/images/image-upload-dialog/loading-icon.png";
 import disappointedClose from "@/assets/images/image-upload-dialog/on-hover-close-button.jpg";
 
 const FORMAT_LABELS: Record<MemeIdea["format"], string> = {
+  lucky: "I'm feeling lucky",
   classic: "Classic",
-  caption: "Caption",
-  speech: "Speech bubble",
-  motivational: "Motivational",
-  movie: "Movie poster",
-  tabloid: "Tabloid",
+  deepfried: "Deep-fried",
+  bgswap: "Scene swap",
+  stickers: "Stickered",
+  remix: "Remix-ready",
 };
 
 type Selected = { file: File; url: string };
@@ -56,6 +63,7 @@ export function UploadDialog() {
   const [isDragging, setIsDragging] = useState(false);
   const [showWebcam, setShowWebcam] = useState(false);
   const [phase, setPhase] = useState<Phase>({ status: "idle" });
+  const [bgSwap, setBgSwap] = useState<BgSwapState>({ status: "idle" });
 
   // Revoke object URL on unmount. (Swap/clear revoke eagerly during use.)
   const selectedRef = useRef<Selected | null>(null);
@@ -89,6 +97,43 @@ export function UploadDialog() {
       return null;
     });
     setPhase({ status: "idle" });
+    setBgSwap({ status: "idle" });
+  };
+
+  const bgSwapAttemptRef = useRef(0);
+
+  const prefetchBgSwap = (ideas: MemeIdea[], file: File) => {
+    const bgIdea = ideas.find((i) => i.format === "bgswap");
+    if (!bgIdea || bgIdea.format !== "bgswap") return;
+    const scene = bgIdea.scene.trim();
+    if (!scene) return;
+
+    const attemptId = ++bgSwapAttemptRef.current;
+    setBgSwap({ status: "loading", scene });
+    const prompt = `Change the background of this photo to: ${scene}. Keep the subject in front the same. Simple, light background. No text.`;
+
+    const tryOnce = (attempt: number): Promise<void> =>
+      generateMemeImage({ images: [file], prompt })
+        .then(({ dataUrl }) => {
+          if (bgSwapAttemptRef.current !== attemptId) return;
+          setBgSwap({ status: "ready", scene, dataUrl });
+        })
+        .catch((e) => {
+          if (bgSwapAttemptRef.current !== attemptId) return;
+          console.warn(`bgswap attempt ${attempt} failed, retrying…`, e);
+          const delay = Math.min(1000 * 2 ** Math.min(attempt, 4), 15_000);
+          return new Promise<void>((resolve) =>
+            setTimeout(() => {
+              if (bgSwapAttemptRef.current !== attemptId) {
+                resolve();
+                return;
+              }
+              tryOnce(attempt + 1).then(resolve);
+            }, delay),
+          );
+        });
+
+    tryOnce(1);
   };
 
   const handleOpenChange = (open: boolean) => {
@@ -114,9 +159,11 @@ export function UploadDialog() {
   const handleGenerate = async () => {
     if (!selected) return;
     setPhase({ status: "generating" });
+    setBgSwap({ status: "idle" });
     try {
       const { ideas } = await generateMemeIdeas({ image: selected.file });
       setPhase({ status: "ideas", ideas });
+      prefetchBgSwap(ideas, selected.file);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Meme idea generation failed", error);
@@ -139,7 +186,10 @@ export function UploadDialog() {
   return (
     <Dialog open onOpenChange={handleOpenChange}>
       <DialogContent
-        className={cn("transition-[max-width] duration-200", wideClass)}
+        className={cn(
+          "flex max-h-[90vh] flex-col transition-[max-width] duration-200",
+          wideClass,
+        )}
         showCloseButton={false}
       >
         <DisappointedCloseButton />
@@ -179,57 +229,60 @@ export function UploadDialog() {
           }}
         />
 
-        {phase.status === "generating" ? (
-          <BusyState />
-        ) : phase.status === "ideas" && selected ? (
-          <IdeasGrid
-            imageUrl={selected.url}
-            ideas={phase.ideas}
-            onPick={(idea) =>
-              setPhase({ status: "picked", idea, ideas: phase.ideas })
-            }
-          />
-        ) : (phase.status === "picked" || phase.status === "sharing") &&
-          selected ? (
-          <MemeCanvasEditor
-            imageUrl={selected.url}
-            initialIdea={phase.idea}
-            ideas={phase.ideas}
-            onShare={handleShare}
-            isSharing={phase.status === "sharing"}
-          />
-        ) : phase.status === "shared" ? (
-          <SharedView
-            id={phase.share.id}
-            imageUrl={phase.share.imageUrl}
-            shareUrl={phase.share.shareUrl}
-          />
-        ) : selected ? (
-          <SelectedPreview
-            url={selected.url}
-            onSwap={() => inputRef.current?.click()}
-            onClear={clearSelected}
-          />
-        ) : showWebcam ? (
-          <WebcamCapture
-            onCapture={(file) => setFile(file)}
-            onCancel={() => setShowWebcam(false)}
-          />
-        ) : (
-          <DropZone
-            isDragging={isDragging}
-            setIsDragging={setIsDragging}
-            onFiles={acceptFiles}
-            onClick={() => inputRef.current?.click()}
-            onUseWebcam={() => setShowWebcam(true)}
-          />
-        )}
+        <div className="-mx-2 flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-2">
+          {phase.status === "generating" ? (
+            <BusyState />
+          ) : phase.status === "ideas" && selected ? (
+            <IdeasGrid
+              imageUrl={selected.url}
+              ideas={phase.ideas}
+              onPick={(idea) =>
+                setPhase({ status: "picked", idea, ideas: phase.ideas })
+              }
+            />
+          ) : (phase.status === "picked" || phase.status === "sharing") &&
+            selected ? (
+            <MemeCanvasEditor
+              imageUrl={selected.url}
+              initialIdea={phase.idea}
+              ideas={phase.ideas}
+              bgSwap={bgSwap}
+              onShare={handleShare}
+              isSharing={phase.status === "sharing"}
+            />
+          ) : phase.status === "shared" ? (
+            <SharedView
+              id={phase.share.id}
+              imageUrl={phase.share.imageUrl}
+              shareUrl={phase.share.shareUrl}
+            />
+          ) : selected ? (
+            <SelectedPreview
+              url={selected.url}
+              onSwap={() => inputRef.current?.click()}
+              onClear={clearSelected}
+            />
+          ) : showWebcam ? (
+            <WebcamCapture
+              onCapture={(file) => setFile(file)}
+              onCancel={() => setShowWebcam(false)}
+            />
+          ) : (
+            <DropZone
+              isDragging={isDragging}
+              setIsDragging={setIsDragging}
+              onFiles={acceptFiles}
+              onClick={() => inputRef.current?.click()}
+              onUseWebcam={() => setShowWebcam(true)}
+            />
+          )}
 
-        {phase.status === "error" && (
-          <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {phase.message}
-          </p>
-        )}
+          {phase.status === "error" && (
+            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {phase.message}
+            </p>
+          )}
+        </div>
 
         <DialogFooter className="sm:items-center">
           {showsShared && phase.status === "shared" ? (
@@ -369,7 +422,7 @@ function SelectedPreview({
 }) {
   return (
     <div className="relative mx-auto aspect-square w-full max-w-xs overflow-hidden rounded-2xl bg-muted ring-1 ring-border">
-      <img src={url} alt="" className="size-full object-cover" />
+      <img src={url} alt="" className="size-full object-contain" />
       <button
         type="button"
         onClick={onClear}

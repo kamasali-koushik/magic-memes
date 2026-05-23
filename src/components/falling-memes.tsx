@@ -7,11 +7,17 @@ import landing3 from "@/assets/images/landing/landing-page-3.png";
 import landing4 from "@/assets/images/landing/landing-page-4.png";
 
 const IMAGES = [landing0, landing1, landing2, landing3, landing4];
-const MAX_MEMES = 14;
-const SPAWN_INTERVAL_MS = 950;
+const MAX_MEMES_DESKTOP = 14;
+const MAX_MEMES_MOBILE = 5;
+const SPAWN_INTERVAL_DESKTOP_MS = 950;
+const SPAWN_INTERVAL_MOBILE_MS = 1600;
+const MOBILE_BREAKPOINT = 640;
 const GRAVITY = 0.0005;
 const MAX_FALL_SPEED = 0.22;
 const RELEASE_SPEED_CAP = 0.9;
+
+const isMobile = () =>
+  typeof window !== "undefined" && window.innerWidth < MOBILE_BREAKPOINT;
 
 type Physics = {
   x: number;
@@ -34,11 +40,16 @@ export function FallingMemes() {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | null = null;
+
     const spawn = () => {
-      if (physicsRef.current.size >= MAX_MEMES) return;
+      const maxMemes = isMobile() ? MAX_MEMES_MOBILE : MAX_MEMES_DESKTOP;
+      if (physicsRef.current.size >= maxMemes) return;
       const id = nextIdRef.current++;
       const src = IMAGES[Math.floor(Math.random() * IMAGES.length)]!;
-      const size = 88 + Math.random() * 84;
+      const size = isMobile()
+        ? 64 + Math.random() * 56
+        : 88 + Math.random() * 84;
       const width = containerRef.current?.clientWidth ?? window.innerWidth;
       physicsRef.current.set(id, {
         x: Math.random() * Math.max(1, width - size),
@@ -53,11 +64,26 @@ export function FallingMemes() {
       });
       setMemes((prev) => [...prev, { id, src }]);
     };
-    // Seed a couple immediately so the page isn't empty on first paint.
+
+    const startInterval = () => {
+      if (interval) clearInterval(interval);
+      const ms = isMobile()
+        ? SPAWN_INTERVAL_MOBILE_MS
+        : SPAWN_INTERVAL_DESKTOP_MS;
+      interval = setInterval(spawn, ms);
+    };
+
+    // Seed immediately so the page isn't empty on first paint.
     spawn();
-    spawn();
-    const interval = setInterval(spawn, SPAWN_INTERVAL_MS);
-    return () => clearInterval(interval);
+    if (!isMobile()) spawn();
+    startInterval();
+
+    const onResize = () => startInterval();
+    window.addEventListener("resize", onResize);
+    return () => {
+      if (interval) clearInterval(interval);
+      window.removeEventListener("resize", onResize);
+    };
   }, []);
 
   useEffect(() => {
