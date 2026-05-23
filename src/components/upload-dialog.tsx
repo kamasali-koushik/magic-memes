@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   ArrowLeft02Icon,
+  CameraIcon,
   Cancel01Icon,
   Image01Icon,
   Loading03Icon,
@@ -53,6 +54,7 @@ export function UploadDialog() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [selected, setSelected] = useState<Selected | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [showWebcam, setShowWebcam] = useState(false);
   const [phase, setPhase] = useState<Phase>({ status: "idle" });
 
   // Revoke object URL on unmount. (Swap/clear revoke eagerly during use.)
@@ -72,6 +74,7 @@ export function UploadDialog() {
       if (prev) URL.revokeObjectURL(prev.url);
       return { file, url: URL.createObjectURL(file) };
     });
+    setShowWebcam(false);
     setPhase({ status: "idle" });
   };
 
@@ -207,12 +210,18 @@ export function UploadDialog() {
             onSwap={() => inputRef.current?.click()}
             onClear={clearSelected}
           />
+        ) : showWebcam ? (
+          <WebcamCapture
+            onCapture={(file) => setFile(file)}
+            onCancel={() => setShowWebcam(false)}
+          />
         ) : (
           <DropZone
             isDragging={isDragging}
             setIsDragging={setIsDragging}
             onFiles={acceptFiles}
             onClick={() => inputRef.current?.click()}
+            onUseWebcam={() => setShowWebcam(true)}
           />
         )}
 
@@ -385,42 +394,185 @@ function DropZone({
   setIsDragging,
   onFiles,
   onClick,
+  onUseWebcam,
 }: {
   isDragging: boolean;
   setIsDragging: (v: boolean) => void;
   onFiles: (files: FileList | File[]) => void;
   onClick: () => void;
+  onUseWebcam: () => void;
 }) {
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      const images: File[] = [];
+      for (const item of items) {
+        if (item.kind !== "file") continue;
+        const file = item.getAsFile();
+        if (file && file.type.startsWith("image/")) images.push(file);
+      }
+      if (images.length) {
+        e.preventDefault();
+        onFiles(images);
+      }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [onFiles]);
+
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      onDragEnter={(e) => {
-        e.preventDefault();
-        setIsDragging(true);
-      }}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setIsDragging(true);
-      }}
-      onDragLeave={() => setIsDragging(false)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragging(false);
-        if (e.dataTransfer.files) onFiles(e.dataTransfer.files);
-      }}
-      className={cn(
-        "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-input/30 px-6 py-12 text-muted-foreground transition-colors hover:bg-input/50 hover:text-foreground",
-        isDragging && "border-primary/60 bg-primary/5 text-foreground",
-      )}
-    >
-      <HugeiconsIcon icon={Image01Icon} className="size-8" />
-      <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-foreground">
-          Drop a photo here, or click to browse
-        </p>
-        <p className="text-xs">PNG, JPG, GIF · one image</p>
+    <div className="flex flex-col gap-3">
+      <button
+        type="button"
+        onClick={onClick}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragging(true);
+        }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setIsDragging(false);
+          if (e.dataTransfer.files) onFiles(e.dataTransfer.files);
+        }}
+        className={cn(
+          "flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-border bg-input/30 px-6 py-12 text-muted-foreground transition-colors hover:bg-input/50 hover:text-foreground",
+          isDragging && "border-primary/60 bg-primary/5 text-foreground",
+        )}
+      >
+        <HugeiconsIcon icon={Image01Icon} className="size-8" />
+        <div className="flex flex-col gap-1">
+          <p className="text-sm font-medium text-foreground">
+            Drag it, paste it, or snap one with the webcam.
+          </p>
+          <p className="text-xs">Or click to browse · PNG, JPG, GIF</p>
+        </div>
+      </button>
+      <Button variant="outline" type="button" onClick={onUseWebcam}>
+        <HugeiconsIcon icon={CameraIcon} />
+        Snap with webcam
+      </Button>
+    </div>
+  );
+}
+
+function WebcamCapture({
+  onCapture,
+  onCancel,
+}: {
+  onCapture: (file: File) => void;
+  onCancel: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+    const supported =
+      typeof navigator !== "undefined" && !!navigator.mediaDevices?.getUserMedia;
+    if (!supported) {
+      setError("Your browser can't access the camera here.");
+      return;
+    }
+    navigator.mediaDevices
+      .getUserMedia({ video: { facingMode: "user" }, audio: false })
+      .then((s) => {
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        stream = s;
+        const video = videoRef.current;
+        if (video) {
+          video.srcObject = s;
+          const onReady = () => setReady(true);
+          video.onloadedmetadata = onReady;
+          // Some browsers fire loadeddata first; cover both.
+          video.onplaying = onReady;
+        }
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        const msg = e instanceof Error ? e.message : String(e);
+        setError(
+          /denied|notallowed/i.test(msg)
+            ? "Camera permission denied. Allow access and try again."
+            : "Couldn't start the camera. Try a different browser or device.",
+        );
+      });
+    return () => {
+      cancelled = true;
+      stream?.getTracks().forEach((t) => t.stop());
+    };
+  }, []);
+
+  const snap = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (!w || !h) return;
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    // Preview is mirrored for a natural feel; un-mirror when saving.
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      onCapture(
+        new File([blob], `webcam-${Date.now()}.png`, { type: "image/png" }),
+      );
+    }, "image/png");
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <div className="relative aspect-square w-full max-w-xs overflow-hidden rounded-2xl bg-black ring-1 ring-border">
+        {error ? (
+          <div className="flex h-full items-center justify-center px-4 text-center text-sm text-destructive-foreground">
+            {error}
+          </div>
+        ) : (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              muted
+              className="size-full -scale-x-100 object-cover"
+            />
+            {!ready && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-xs text-white/80">
+                Starting camera…
+              </div>
+            )}
+          </>
+        )}
       </div>
-    </button>
+      <div className="flex gap-2">
+        <Button variant="outline" type="button" onClick={onCancel}>
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          onClick={snap}
+          disabled={!ready || !!error}
+        >
+          <HugeiconsIcon icon={CameraIcon} />
+          Snap
+        </Button>
+      </div>
+    </div>
   );
 }
