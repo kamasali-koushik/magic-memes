@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
+
+# Generated memes (local dev only)
+public/memes/
+.tanstack/tmp
