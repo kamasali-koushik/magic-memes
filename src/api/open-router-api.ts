@@ -17,7 +17,7 @@ export const openRouter = new OpenRouter({
 });
 
 // A vision-capable default. Override per-call if you want something cheaper/smarter.
-export const DEFAULT_VISION_MODEL = "anthropic/claude-opus-4.7-fast";
+export const DEFAULT_VISION_MODEL = "google/gemini-3.5-flash";
 
 // Image-generation-capable vision model. Returns generated images in the
 // assistant message's `images` array.
