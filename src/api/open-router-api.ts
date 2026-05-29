@@ -17,8 +17,7 @@ export const openRouter = new OpenRouter({
 });
 
 // A vision-capable default. Override per-call if you want something cheaper/smarter.
-export const DEFAULT_VISION_MODEL =
-  "tngtech/deepseek-r1t-chimera-235b-instruct:free";
+export const DEFAULT_VISION_MODEL = "tngtech/deepseek-r1t-chimera";
 
 // Image-generation-capable vision model. Returns generated images in the
 // assistant message's `images` array.
