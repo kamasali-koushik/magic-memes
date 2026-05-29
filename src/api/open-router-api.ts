@@ -17,11 +17,11 @@ export const openRouter = new OpenRouter({
 });
 
 // A vision-capable default. Override per-call if you want something cheaper/smarter.
-export const DEFAULT_VISION_MODEL = "google/gemini-3.5-flash";
+export const DEFAULT_VISION_MODEL = "black-forest-labs/flux.2-klein-4b";
 
 // Image-generation-capable vision model. Returns generated images in the
 // assistant message's `images` array.
-export const DEFAULT_IMAGE_GEN_MODEL = "google/gemini-3-pro-image-preview";
+export const DEFAULT_IMAGE_GEN_MODEL = "x-ai/grok-imagine-image-quality";
 
 export const RANDOM_MEME_PROMPTS = [
   "Mash these photos into a single absurd meme image. Pick a punchy caption and overlay it on the image.",
